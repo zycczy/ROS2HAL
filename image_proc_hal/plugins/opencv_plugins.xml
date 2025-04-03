@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<library path="image_proc_hal_opencv">
+  <class name="image_proc_hal/opencv/OpenCVRectifyProcessor" 
+         type="image_proc_hal::opencv::OpenCVRectifyProcessor" 
+         base_class_type="image_proc_hal::RectifyProcessor">
+    <description>
+      OpenCV implementation of image rectification.
+    </description>
+  </class>
+  <class name="image_proc_hal/opencv/OpenCVDebayerProcessor" 
+         type="image_proc_hal::opencv::OpenCVDebayerProcessor" 
+         base_class_type="image_proc_hal::DebayerProcessor">
+    <description>
+      OpenCV implementation of Bayer pattern demosaicing.
+    </description>
+  </class>
+  <class name="image_proc_hal/opencv/OpenCVResizeProcessor" 
+         type="image_proc_hal::opencv::OpenCVResizeProcessor" 
+         base_class_type="image_proc_hal::ResizeProcessor">
+    <description>
+      OpenCV implementation of image resizing.
+    </description>
+  </class>
+</library>

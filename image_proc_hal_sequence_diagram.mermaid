@@ -1,0 +1,87 @@
+sequenceDiagram
+    participant Client as Client Application
+    participant PF as ProcessorFactory
+    participant RP as RectifyProcessor
+    participant VRP as VendorRectifyProcessor
+    participant ORP as OpenCVRectifyProcessor
+    participant MM as VendorMemoryManager
+
+    %% Initialization flow
+    Client->>+PF: get_instance()
+    PF-->>-Client: factory instance
+    Client->>+PF: create_processor<RectifyProcessor>("vendor")
+    
+    %% Try to load vendor implementation
+    PF->>+PF: get_class_loader<RectifyProcessor>()
+    PF->>PF: Look for available classes
+    
+    alt Vendor implementation available
+        PF->>+VRP: createSharedInstance("vendor/RectifyProcessor")
+        VRP->>VRP: Initialize capabilities
+        VRP->>+MM: Create memory manager
+        MM-->>-VRP: Memory manager instance
+        VRP-->>-PF: VendorRectifyProcessor instance
+        PF-->>-Client: VendorRectifyProcessor
+    else Vendor not available or failed to load
+        PF->>+ORP: createSharedInstance("opencv/RectifyProcessor")
+        ORP->>ORP: Initialize capabilities
+        ORP-->>-PF: OpenCVRectifyProcessor instance
+        PF-->>-Client: OpenCVRectifyProcessor (fallback)
+    end
+
+    %% Image processing flow
+    Client->>+RP: rectify(input_image, camera_info, output_image)
+    
+    alt Using vendor implementation
+        RP->>+VRP: rectify(input_image, camera_info, output_image)
+        VRP->>VRP: is_compatible(input_image)
+        
+        VRP->>+MM: allocate_aligned_memory(size, alignment)
+        MM-->>-VRP: device memory
+        
+        VRP->>+MM: copy_to_device(device_ptr, host_ptr, size)
+        MM-->>-VRP: copy complete
+        
+        VRP->>VRP: Process image using hardware acceleration
+        
+        VRP->>+MM: copy_from_device(host_ptr, device_ptr, size)
+        MM-->>-VRP: copy complete
+        
+        VRP->>+MM: free_aligned_memory(device_ptr)
+        MM-->>-VRP: memory freed
+        
+        VRP-->>-RP: true (success)
+    else Using OpenCV implementation
+        RP->>+ORP: rectify(input_image, camera_info, output_image)
+        ORP->>ORP: is_compatible(input_image)
+        ORP->>ORP: Process image using OpenCV
+        ORP-->>-RP: true (success)
+    end
+    
+    RP-->>-Client: true (success)
+
+    %% Zero-copy optimization scenario
+    Client->>+PF: create_processor<DebayerProcessor>("vendor")
+    PF-->>-Client: VendorDebayerProcessor
+    
+    Client->>+RP: debayer(bayer_image, color_image, algorithm)
+    RP->>+VRP: debayer(bayer_image, color_image, algorithm)
+    
+    alt Zero-copy supported
+        VRP->>+MM: supports_zero_copy()
+        MM-->>-VRP: true
+        
+        VRP->>+MM: get_device_accessible_pointer(host_ptr)
+        MM-->>-VRP: device_accessible_ptr
+        
+        VRP->>VRP: Process using direct device access
+        VRP-->>-RP: true (success)
+    else Zero-copy not supported
+        VRP->>+MM: supports_zero_copy()
+        MM-->>-VRP: false
+        
+        Note over VRP: Falls back to copy-based approach
+        VRP-->>-RP: true (success)
+    end
+    
+    RP-->>-Client: true (success)

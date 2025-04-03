@@ -1,0 +1,141 @@
+classDiagram
+    class ImageProcessorBase {
+        <<abstract>>
+        +ImageProcessorBase()
+        +~ImageProcessorBase()
+        +get_capabilities() ImageProcessorCapabilities
+        +is_compatible(image) bool
+        #capabilities_ ImageProcessorCapabilities
+    }
+
+    class ImageProcessorCapabilities {
+        +ImageProcessorCapabilities(vendor_name, implementation_name)
+        +supports_color_space(color_space) bool
+        +supports_resolution(width, height) bool
+        +supports_hardware_acceleration() bool
+        +get_supported_color_spaces() vector~ColorSpace~
+        +get_min_resolution() pair~uint32_t, uint32_t~
+        +get_max_resolution() pair~uint32_t, uint32_t~
+        +get_vendor_name() string
+        +get_implementation_name() string
+        +add_supported_color_space(color_space) void
+        +set_hardware_acceleration_supported(supported) void
+        +set_min_resolution(width, height) void
+        +set_max_resolution(width, height) void
+        -vendor_name_ string
+        -implementation_name_ string
+        -supported_color_spaces_ vector~ColorSpace~
+        -supports_hw_accel_ bool
+        -min_resolution_ pair~uint32_t, uint32_t~
+        -max_resolution_ pair~uint32_t, uint32_t~
+    }
+
+    class RectifyProcessor {
+        <<abstract>>
+        +~RectifyProcessor()
+        +rectify(input_image, camera_info, output_image) bool
+    }
+
+    class DebayerProcessor {
+        <<abstract>>
+        +~DebayerProcessor()
+        +debayer(bayer_image, color_image, algorithm) bool
+    }
+
+    class ResizeProcessor {
+        <<abstract>>
+        +~ResizeProcessor()
+        +resize(input_image, output_image, width, height, method) bool
+    }
+
+    class ProcessorFactory {
+        +get_instance() ProcessorFactory&
+        +create_processor<T>(preferred_vendor) shared_ptr<T>
+        +get_available_implementations<T>() vector~string~
+        -ProcessorFactory()
+        -~ProcessorFactory()
+        -get_class_loader<T>() shared_ptr<ClassLoader<T>>
+        -class_loaders_ map~string, shared_ptr<void>~
+    }
+
+    class MemoryManager {
+        <<abstract>>
+        +~MemoryManager()
+        +allocate_aligned_memory(size, alignment) void*
+        +free_aligned_memory(ptr) void
+        +copy_to_device(device_ptr, host_ptr, size) bool
+        +copy_from_device(host_ptr, device_ptr, size) bool
+        +supports_zero_copy() bool
+        +get_device_accessible_pointer(host_ptr) void*
+    }
+
+    class OpenCVRectifyProcessor {
+        +OpenCVRectifyProcessor()
+        +~OpenCVRectifyProcessor()
+        +rectify(input_image, camera_info, output_image) bool
+    }
+
+    class OpenCVDebayerProcessor {
+        +OpenCVDebayerProcessor()
+        +~OpenCVDebayerProcessor()
+        +debayer(bayer_image, color_image, algorithm) bool
+    }
+
+    class OpenCVResizeProcessor {
+        +OpenCVResizeProcessor()
+        +~OpenCVResizeProcessor()
+        +resize(input_image, output_image, width, height, method) bool
+    }
+
+    class VendorRectifyProcessor {
+        +VendorRectifyProcessor()
+        +~VendorRectifyProcessor()
+        +rectify(input_image, camera_info, output_image) bool
+        -memory_manager_ shared_ptr<MemoryManager>
+    }
+
+    class VendorDebayerProcessor {
+        +VendorDebayerProcessor()
+        +~VendorDebayerProcessor()
+        +debayer(bayer_image, color_image, algorithm) bool
+        -memory_manager_ shared_ptr<MemoryManager>
+    }
+
+    class VendorResizeProcessor {
+        +VendorResizeProcessor()
+        +~VendorResizeProcessor()
+        +resize(input_image, output_image, width, height, method) bool
+        -memory_manager_ shared_ptr<MemoryManager>
+    }
+
+    class VendorMemoryManager {
+        +VendorMemoryManager()
+        +~VendorMemoryManager()
+        +allocate_aligned_memory(size, alignment) void*
+        +free_aligned_memory(ptr) void
+        +copy_to_device(device_ptr, host_ptr, size) bool
+        +copy_from_device(host_ptr, device_ptr, size) bool
+        +supports_zero_copy() bool
+        +get_device_accessible_pointer(host_ptr) void*
+    }
+
+    ImageProcessorBase <|-- RectifyProcessor
+    ImageProcessorBase <|-- DebayerProcessor
+    ImageProcessorBase <|-- ResizeProcessor
+    
+    RectifyProcessor <|-- OpenCVRectifyProcessor
+    RectifyProcessor <|-- VendorRectifyProcessor
+    
+    DebayerProcessor <|-- OpenCVDebayerProcessor
+    DebayerProcessor <|-- VendorDebayerProcessor
+    
+    ResizeProcessor <|-- OpenCVResizeProcessor
+    ResizeProcessor <|-- VendorResizeProcessor
+    
+    MemoryManager <|-- VendorMemoryManager
+    
+    ImageProcessorBase o-- ImageProcessorCapabilities
+    ProcessorFactory ..> ImageProcessorBase : creates
+    VendorRectifyProcessor o-- VendorMemoryManager
+    VendorDebayerProcessor o-- VendorMemoryManager
+    VendorResizeProcessor o-- VendorMemoryManager

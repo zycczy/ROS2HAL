@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<library path="image_proc_hal_sample_vendor">
+  <class name="image_proc_hal/sample_vendor/SampleVendorRectifyProcessor" 
+         type="image_proc_hal::sample_vendor::SampleVendorRectifyProcessor" 
+         base_class_type="image_proc_hal::RectifyProcessor">
+    <description>
+      Sample vendor implementation of hardware-accelerated image rectification.
+    </description>
+  </class>
+</library>
